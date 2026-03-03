@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moodflow</title>
+    <style>
+        :root {
+            --bg-green: #7E947E;
+            --dark-card: rgba(85, 85, 85, 0.9);
+            --blue-nav: #3B69A5;
+            --white: #ffffff;
+        }
+
+        body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-green); height: 100%; width: 100%; overflow: hidden; }
+        .app-shell { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* --- LOGIN --- */
+        #page-login { position: absolute; inset: 0; background-color: var(--bg-green); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        .login-circle { width: 100px; height: 100px; background: white; border-radius: 50%; margin-bottom: 30px; }
+        .input-box { width: 85%; background: white; border-radius: 25px; padding: 12px 20px; margin-bottom: 15px; display: flex; align-items: center; box-sizing: border-box; }
+        .input-box label { color: var(--bg-green); font-weight: bold; width: 90px; flex-shrink: 0; font-size: 14px; }
+        .input-box input { border: none; outline: none; width: 100%; font-size: 16px; background: transparent; }
+        .btn-login { margin-top: 10px; font-weight: bold; cursor: pointer; color: white; font-size: 18px; border: none; background: none; }
+
+        /* --- CONTENT --- */
+        .content-display { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 130px; }
+        .bg-home { background: url('https://w0.peakpx.com/wallpaper/593/17/HD-wallpaper-cartoon-landscape-trees-clouds-hills-nature.jpg') no-repeat center center; background-size: cover; }
+        .card { background: var(--dark-card); border-radius: 25px; padding: 20px; margin-bottom: 15px; color: white; position: relative; }
+        
+        /* EMOJI STYLES */
+        .profile-pic-home { width: 60px; height: 60px; background: transparent; display: flex; justify-content: center; align-items: center; font-size: 45px; margin-right: 12px; }
+        .profile-pic-acc { width: 90px; height: 90px; border-radius: 50%; background: white; margin: 0 auto 15px auto; display: flex; justify-content: center; align-items: center; font-size: 55px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        /* --- MOOD INDICATOR (CUSTOM SLIDER) --- */
+        .mood-box { position: relative; width: 100%; height: 60px; margin: 20px 0; }
+        .mood-track { width: 100%; height: 15px; border-radius: 10px; background: linear-gradient(to right, #ff4d4d, #ffa502, #fed330, #2ecc71); position: absolute; top: 50%; transform: translateY(-50%); }
+        .mood-slider { -webkit-appearance: none; width: 100%; background: transparent; position: relative; z-index: 2; cursor: pointer; height: 60px; margin: 0; }
+        /* Hilangkan bulatan bawaan slider */
+        .mood-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 50px; height: 50px; background: transparent; border: none; }
+        
+        #emoji-pointer { position: absolute; top: 0; left: 0; transform: translateX(-50%); font-size: 35px; pointer-events: none; z-index: 3; transition: left 0.1s ease-out; }
+
+        /* --- SEARCH & LISTS --- */
+        .search-bar { width: 100%; padding: 15px; border-radius: 25px; border: none; margin-bottom: 20px; box-sizing: border-box; font-size: 16px; text-align: center; outline: none; }
+        .friend-item-v { display: flex; align-items: center; background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 20px; margin-bottom: 8px; }
+        .friend-circle-v { width: 38px; height: 38px; background: white; border-radius: 50%; margin-right: 15px; display: flex; justify-content: center; align-items: center; font-size: 18px; color: #333; flex-shrink: 0; }
+        
+        /* Icon Pin Putih agar tidak nyatu dengan background merah sebelumnya */
+        .pin-circle { background: white !important; color: #e74c3c !important; font-size: 18px !important; }
+
+        /* --- JURNAL --- */
+        .jurnal-item { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 20px; margin-bottom: 12px; position: relative; }
+        .jurnal-text-preview { font-size: 14px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding-right: 25px; }
+        .dots-btn { position: absolute; bottom: 10px; right: 15px; font-size: 22px; color: rgba(255,255,255,0.5); cursor: pointer; }
+
+        /* --- NAV --- */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: var(--blue-nav); border-radius: 30px 30px 0 0; display: flex; justify-content: space-around; align-items: center; z-index: 99; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: white; opacity: 0.5; font-size: 11px; cursor: pointer; }
+        .nav-btn.active { opacity: 1; }
+        .nav-icon { width: 40px; height: 40px; background: white; border-radius: 12px; color: black; display: flex; justify-content: center; align-items: center; font-size: 18px; margin-bottom: 4px; }
+        .active .nav-icon { background: black; color: white; }
+
+        .hidden { display: none !important; }
+        textarea { width: 100%; border-radius: 15px; padding: 12px; border: none; margin: 10px 0; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        .btn-add { background: #2ecc71; color: white; border: none; padding: 12px; border-radius: 15px; font-weight: bold; width: 100%; cursor: pointer; }
+
+        #modal-full { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 25px; }
+        .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-height: 60vh; overflow-y: auto; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <div id="page-login">
+        <div class="login-circle"></div>
+        <div class="input-box"><label>Username :</label><input type="text" id="user-input" placeholder="Nama..."></div>
+        <div class="input-box"><label>Password :</label><input type="password" placeholder="******"></div>
+        <button class="btn-login" onclick="doLogin()">Log in</button>
+    </div>
+    
+    <div id="main-app" style="display:none;">
+        <div id="view-home" class="content-display bg-home">
+            <div class="card">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <div class="profile-pic-home" id="p-img-home">😢</div>
+                    <div><b id="user-home">User</b><br><small id="label-mood">Sedih</small></div>
+                </div>
+                <textarea id="note-home" placeholder="Gimana perasaanmu hari ini?"></textarea>
+                
+                <div class="mood-box">
+                    <div id="emoji-pointer">😢</div>
+                    <div class="mood-track"></div>
+                    <input type="range" class="mood-slider" min="0" max="100" value="0" oninput="updateMood(this.value)">
+                </div>
+                
+                <button class="btn-add" onclick="alert('Mood disimpan!')">Simpan Perubahan</button>
+            </div>
+            <div class="card">
+                <h4 style="margin:0 0 10px 0">Teman Sekitar</h4>
+                <div class="friend-item-v"><div class="friend-circle-v">👤</div><span>Diki</span></div>
+                <div class="friend-item-v"><div class="friend-circle-v">👤</div><span>Budi</span></div>
+            </div>
+        </div>
+
+        <div id="view-search" class="content-display hidden">
+            <input type="text" class="search-bar" placeholder="Temukan orang sekitarmu" oninput="runSearch(this.value)">
+            <div id="search-results"></div>
+            <div class="card" id="near-card">
+                <h4 style="margin:0 0 15px 0">Orang Sekitar</h4>
+                <div class="friend-item-v">
+                    <div class="friend-circle-v pin-circle">📍</div>
+                    <span>Andini (200m)</span>
+                </div>
+                <div class="friend-item-v">
+                    <div class="friend-circle-v pin-circle">📍</div>
+                    <span>Reza (500m)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-account" class="content-display hidden">
+            <div class="profile-pic-acc">👤</div>
+            <h2 id="user-acc" style="color:white; text-align:center;">User</h2>
+            <div class="card">
+                <h3 style="margin-top:0">📝 Jurnal Saya</h3>
+                <textarea id="journal-input" placeholder="Tulis cerita harimu..."></textarea>
+                <button class="btn-add" onclick="addJournal()">+ Simpan Jurnal</button>
+            </div>
+            <div id="journal-list"></div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-btn active" onclick="gantiHalaman('home', 0)"><div class="nav-icon">🏠</div>Home</div>
+            <div class="nav-btn" onclick="gantiHalaman('search', 1)"><div class="nav-icon">🔍</div>Search</div>
+            <div class="nav-btn" onclick="gantiHalaman('account', 2)"><div class="nav-icon">👤</div>Account</div>
+        </nav>
+    </div>
+
+    <div id="modal-full" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <p id="modal-text" style="line-height:1.6; white-space: pre-wrap;"></p>
+            <button class="btn-add" onclick="document.getElementById('modal-full').style.display='none'" style="background:#e74c3c">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const accounts = [
+        { name: "Raditya", mood: "😊" }, { name: "Raihan", mood: "😐" }, { name: "Ramadhany", mood: "😡" },
+        { name: "Zavier", mood: "😊" }, { name: "Ferdika", mood: "😢" }, { name: "Daffa", mood: "😐" },
+        { name: "Fauzan", mood: "😡" }, { name: "Diki", mood: "😊" }, { name: "Budi", mood: "😐" }
+    ];
+    let journals = [];
+
+    function doLogin() {
+        const u = document.getElementById('user-input').value || "User";
+        document.getElementById('user-home').innerText = u;
+        document.getElementById('user-acc').innerText = u;
+        document.getElementById('page-login').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex';
+    }
+
+    function gantiHalaman(p, idx) {
+        document.querySelectorAll('.content-display').forEach(d => d.classList.add('hidden'));
+        document.getElementById('view-' + p).classList.remove('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+    }
+
+    // --- MOOD LOGIC ---
+    function updateMood(v) {
+        const pointer = document.getElementById('emoji-pointer');
+        const pImg = document.getElementById('p-img-home');
+        const label = document.getElementById('label-mood');
+        
+        pointer.style.left = v + "%";
+        let emo = "😢"; let text = "Sedih";
+        
+        if(v < 25) { emo = "😢"; text = "Sedih"; }
+        else if(v < 50) { emo = "😡"; text = "Marah"; }
+        else if(v < 75) { emo = "😐"; text = "Biasa"; }
+        else { emo = "😊"; text = "Senang"; }
+        
+        pointer.innerText = emo;
+        pImg.innerText = emo;
+        label.innerText = text;
+    }
+
+    // --- SEARCH LOGIC ---
+    function runSearch(q) {
+        const res = document.getElementById('search-results');
+        const near = document.getElementById('near-card');
+        if(!q.trim()) { res.innerHTML = ""; near.classList.remove('hidden'); return; }
+        near.classList.add('hidden');
+        const filtered = accounts.filter(acc => acc.name.toLowerCase().startsWith(q.toLowerCase())).sort((a,b)=>a.name.localeCompare(b.name));
+        res.innerHTML = filtered.map(acc => `<div class="friend-item-v" style="background:white; color:black;"><div class="friend-circle-v" style="background:#f0f0f0;">${acc.mood}</div><span>${acc.name}</span></div>`).join('');
+    }
+
+    // --- JURNAL LOGIC ---
+    function addJournal() {
+        const input = document.getElementById('journal-input');
+        if(!input.value.trim()) return;
+        journals.unshift({ id: Date.now(), text: input.value });
+        input.value = "";
+        renderJournals();
+    }
+
+    function renderJournals() {
+        const list = document.getElementById('journal-list');
+        list.innerHTML = journals.map((j, i) => `<div class="jurnal-item" onclick="showFullJournal(${i})"><div class="jurnal-text-preview">${j.text}</div><div class="dots-btn" onclick="event.stopPropagation(); deleteJournal(${j.id})">...</div></div>`).join('');
+    }
+
+    function showFullJournal(i) {
+        document.getElementById('modal-text').innerText = journals[i].text;
+        document.getElementById('modal-full').style.display = 'flex';
+    }
+
+    function deleteJournal(id) {
+        if(confirm("Hapus jurnal ini?")) { journals = journals.filter(j => j.id !== id); renderJournals(); }
+    }
+</script>
+
+</body>
+</html>
